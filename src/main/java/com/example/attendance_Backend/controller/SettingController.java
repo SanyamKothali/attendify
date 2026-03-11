@@ -6,8 +6,11 @@ import org.springframework.web.bind.annotation.*;
 
 import com.example.attendance_Backend.security.AdminContextHolder;
 import com.example.attendance_Backend.model.Admin;
+import com.example.attendance_Backend.repository.AdminRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/settings")
@@ -15,9 +18,14 @@ import org.springframework.http.ResponseEntity;
 public class SettingController {
 
     private final SettingRepository settingRepository;
+    private final AdminRepository adminRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public SettingController(SettingRepository settingRepository) {
+    public SettingController(SettingRepository settingRepository, AdminRepository adminRepository,
+            PasswordEncoder passwordEncoder) {
         this.settingRepository = settingRepository;
+        this.adminRepository = adminRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     // Save or Update Settings
@@ -70,6 +78,44 @@ public class SettingController {
                     defaultSetting.setSendAlerts(false);
                     return settingRepository.save(defaultSetting);
                 }));
+    }
+
+    // Get Admin Profile
+    @GetMapping("/profile")
+    public ResponseEntity<Admin> getProfile() {
+        Long adminId = AdminContextHolder.getAdminId();
+        if (adminId == null)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
+        return adminRepository.findById(adminId)
+                .map(admin -> {
+                    admin.setPassword(null); // Safety: don't send password
+                    return ResponseEntity.ok(admin);
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // Update Admin Profile (Name and/or Password)
+    @PostMapping("/profile")
+    public ResponseEntity<?> updateProfile(@RequestBody Map<String, String> updates) {
+        Long adminId = AdminContextHolder.getAdminId();
+        if (adminId == null)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
+        return adminRepository.findById(adminId)
+                .map(admin -> {
+                    if (updates.containsKey("name")) {
+                        admin.setName(updates.get("name"));
+                    }
+                    if (updates.containsKey("password") && updates.get("password") != null
+                            && !updates.get("password").isEmpty()) {
+                        admin.setPassword(passwordEncoder.encode(updates.get("password")));
+                    }
+                    adminRepository.save(admin);
+                    admin.setPassword(null);
+                    return ResponseEntity.ok(admin);
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
 }

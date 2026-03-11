@@ -37,6 +37,7 @@ function showSection(section) {
     if (section === 'masterdata') switchMdTab('dept');
     if (section === 'students') initStudentsSection();
     if (section === 'teachers') initTeachersSection();
+    if (section === 'settings') loadSettings();
 
     document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
     document.querySelector(`.nav-link[onclick="showSection('${section}')"]`)?.classList.add('active');
@@ -1080,6 +1081,113 @@ async function saveMasterData(e) {
 
 
 // =========================
+// SETTINGS SECTION
+// =========================
+async function loadSettings() {
+    try {
+        const res = await fetch('/api/settings');
+        if (!res.ok) throw new Error("Failed to load settings");
+        const s = await res.json();
+
+        document.getElementById('settingThreshold').value = s.attendanceThreshold;
+        document.getElementById('settingLateBuffer').value = s.lateArrivalMinutes;
+        document.getElementById('settingAutoAbsent').value = s.autoMarkAbsentMinutes;
+        document.getElementById('settingManualOverride').checked = s.manualOverride;
+        document.getElementById('settingSendAlerts').checked = s.sendAlerts;
+
+        // Also load profile to ensure it's fresh
+        loadAdminProfile();
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function loadAdminProfile() {
+    try {
+        const res = await fetch('/api/settings/profile');
+        if (!res.ok) return;
+        const admin = await res.json();
+
+        // Update Sidebar
+        const sidebarName = document.getElementById('sidebarName');
+        const sidebarEmail = document.getElementById('sidebarEmail');
+        const sidebarAvatar = document.getElementById('sidebarAvatar');
+
+        if (sidebarName) sidebarName.textContent = admin.name || "Admin Director";
+        if (sidebarEmail) sidebarEmail.textContent = admin.email;
+        if (sidebarAvatar && admin.name) {
+            sidebarAvatar.textContent = admin.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        }
+
+        // Update Settings Form Fields
+        const profileName = document.getElementById('adminName');
+        const profileEmail = document.getElementById('adminEmail');
+        const profileCode = document.getElementById('adminSchoolCode');
+
+        if (profileName) profileName.value = admin.name || "";
+        if (profileEmail) profileEmail.value = admin.email;
+        if (profileCode) profileCode.value = admin.schoolCode;
+
+    } catch (e) {
+        console.error("Profile load error:", e);
+    }
+}
+
+async function saveSystemSettings(e) {
+    e.preventDefault();
+    const payload = {
+        attendanceThreshold: parseInt(document.getElementById('settingThreshold').value),
+        lateArrivalMinutes: parseInt(document.getElementById('settingLateBuffer').value),
+        autoMarkAbsentMinutes: parseInt(document.getElementById('settingAutoAbsent').value),
+        manualOverride: document.getElementById('settingManualOverride').checked,
+        sendAlerts: document.getElementById('settingSendAlerts').checked
+    };
+
+    try {
+        const res = await fetch('/api/settings/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+            alert("System settings saved successfully!");
+        } else {
+            alert("Failed to save settings.");
+        }
+    } catch (e) {
+        console.error(e);
+        alert("An error occurred.");
+    }
+}
+
+async function saveProfileSettings(e) {
+    e.preventDefault();
+    const name = document.getElementById('adminName').value;
+    const password = document.getElementById('adminNewPassword').value;
+
+    const payload = { name };
+    if (password) payload.password = password;
+
+    try {
+        const res = await fetch('/api/settings/profile', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+            alert("Profile updated successfully!");
+            document.getElementById('adminNewPassword').value = "";
+            loadAdminProfile(); // Refresh sidebar name
+        } else {
+            alert("Failed to update profile.");
+        }
+    } catch (e) {
+        console.error(e);
+        alert("An error occurred.");
+    }
+}
+
+// =========================
 // Initial Load
 document.addEventListener("DOMContentLoaded", function () {
     const role = localStorage.getItem("admin_role");
@@ -1091,6 +1199,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     showSection('dashboard');
+    loadAdminProfile();
     loadAttendanceOverview();
     loadClassAttendanceChart();
     loadTrendChart();
