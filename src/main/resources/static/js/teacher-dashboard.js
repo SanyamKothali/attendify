@@ -1064,20 +1064,30 @@ async function loadTeacherSubjectsInStudentTab() {
             headers: { 'Authorization': 'Bearer ' + authToken }
         });
         const classes = await classesRes.json();
+        const uniqueClasses = [];
+        const seenNames = new Set();
+
         classes.forEach(c => {
-            classDropdown.innerHTML += `<option value="${c.id}">${c.className}</option>`;
+            if (!seenNames.has(c.className)) {
+                seenNames.add(c.className);
+                uniqueClasses.push(c);
+            }
+        });
+
+        uniqueClasses.forEach(c => {
+            classDropdown.innerHTML += `<option value="${c.className}">${c.className}</option>`;
         });
 
         // Add listeners for dependent dropdowns
         classDropdown.onchange = async () => {
-            const classId = classDropdown.value;
+            const className = classDropdown.value;
             divisionDropdown.innerHTML = `<option value="">All Divisions</option>`;
             subjectDropdown.innerHTML = `<option value="">All Subjects</option>`;
 
-            if (!classId) return;
+            if (!className) return;
 
-            // Load divisions for class
-            const divsRes = await fetch(`/api/master/classes/${classId}/divisions`, {
+            // Load divisions for class name
+            const divsRes = await fetch(`/api/master/classes/name/${encodeURIComponent(className)}/divisions`, {
                 headers: { 'Authorization': 'Bearer ' + authToken }
             });
             const divs = await divsRes.json();
@@ -1085,8 +1095,8 @@ async function loadTeacherSubjectsInStudentTab() {
                 divisionDropdown.innerHTML += `<option value="${d.id}">${d.divisionName}</option>`;
             });
 
-            // Load subjects for class
-            const subsRes = await fetch(`/api/master/classes/${classId}/subjects`, {
+            // Load subjects for class name
+            const subsRes = await fetch(`/api/master/classes/name/${encodeURIComponent(className)}/subjects`, {
                 headers: { 'Authorization': 'Bearer ' + authToken }
             });
             const subs = await subsRes.json();
@@ -1147,14 +1157,14 @@ function loadStudentsContent() {
 
 
 function loadStudentsForSelectedClass() {
-    const classId = document.getElementById("filterClass")?.value;
+    const className = document.getElementById("filterClass")?.value;
     const divisionId = document.getElementById("filterDivision")?.value;
     const subjectId = document.getElementById("filterSubject")?.value;
 
     let url = "/api/attendance/teacher/student-list";
     const params = new URLSearchParams();
 
-    if (classId) params.append("classId", classId);
+    if (className) params.append("className", className);
     if (divisionId) params.append("divisionId", divisionId);
     if (subjectId) params.append("subjectId", subjectId);
 

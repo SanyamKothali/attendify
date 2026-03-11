@@ -12,6 +12,8 @@ public interface ClassSubjectRepository extends JpaRepository<ClassSubject, Inte
     List<ClassSubject> findByClassMasterId(Integer classId);
 
     List<ClassSubject> findByClassMasterIdAndAdminId(Integer classId, Long adminId);
+ 
+    List<ClassSubject> findByClassMasterIdInAndAdminId(List<Integer> classIds, Long adminId);
 
     List<ClassSubject> findByAdminId(Long adminId);
 

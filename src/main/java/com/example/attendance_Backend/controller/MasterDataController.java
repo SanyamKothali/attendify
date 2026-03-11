@@ -169,6 +169,37 @@ public class MasterDataController {
         return ResponseEntity.ok(subjects);
     }
 
+    @GetMapping("/classes/name/{className}/divisions")
+    public ResponseEntity<List<DivisionMaster>> getDivisionsByClassName(@PathVariable String className) {
+        Long adminId = AdminContextHolder.getAdminId();
+        if (adminId == null)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
+        List<ClassMaster> classes = classMasterRepository.findAllByClassNameAndAdminId(className, adminId);
+        if (classes.isEmpty())
+            return ResponseEntity.ok(new java.util.ArrayList<>());
+
+        List<Integer> ids = classes.stream().map(ClassMaster::getId).collect(java.util.stream.Collectors.toList());
+        return ResponseEntity.ok(divisionMasterRepository.findByClassMasterIdInAndAdminId(ids, adminId));
+    }
+
+    @GetMapping("/classes/name/{className}/subjects")
+    public ResponseEntity<List<SubjectMaster>> getSubjectsByClassName(@PathVariable String className) {
+        Long adminId = AdminContextHolder.getAdminId();
+        if (adminId == null)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
+        List<ClassMaster> classes = classMasterRepository.findAllByClassNameAndAdminId(className, adminId);
+        if (classes.isEmpty())
+            return ResponseEntity.ok(new java.util.ArrayList<>());
+
+        List<Integer> ids = classes.stream().map(ClassMaster::getId).collect(java.util.stream.Collectors.toList());
+        List<ClassSubject> mappings = classSubjectRepository.findByClassMasterIdInAndAdminId(ids, adminId);
+        List<SubjectMaster> subjects = mappings.stream().map(ClassSubject::getSubjectMaster)
+                .collect(java.util.stream.Collectors.toList());
+        return ResponseEntity.ok(subjects);
+    }
+
     // ==========================================
     // 3. DIVISION MASTER CRUD
     // ==========================================

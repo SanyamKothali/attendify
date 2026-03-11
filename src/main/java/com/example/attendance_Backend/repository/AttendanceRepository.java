@@ -112,14 +112,14 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Integer>
                 ON a.user = u
                 AND a.date = CURRENT_DATE
                 AND (:subjectId IS NULL OR a.subjectMaster.id = :subjectId)
-            WHERE (:classId IS NULL OR u.classMaster.id = :classId)
+            WHERE (:className IS NULL OR u.classMaster.className = :className)
             AND (:divisionId IS NULL OR u.divisionMaster.id = :divisionId)
             AND (u.role = 'STUDENT')
             AND (u.admin.id = :adminId)
             ORDER BY u.rollNo
             """)
     List<StudentAttendanceDTO> getFilteredStudentTabData(
-            @Param("classId") Integer classId,
+            @Param("className") String className,
             @Param("divisionId") Integer divisionId,
             @Param("subjectId") Integer subjectId,
             @Param("adminId") Long adminId);

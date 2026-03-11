@@ -15,6 +15,8 @@ public interface DivisionMasterRepository extends JpaRepository<DivisionMaster, 
     Optional<DivisionMaster> findByIdAndAdminId(Integer id, Long adminId);
 
     List<DivisionMaster> findByClassMasterIdAndAdminId(Integer classId, Long adminId);
+ 
+    List<DivisionMaster> findByClassMasterIdInAndAdminId(List<Integer> classIds, Long adminId);
 
     Optional<DivisionMaster> findByDivisionNameAndAdminId(String divisionName, Long adminId);
 

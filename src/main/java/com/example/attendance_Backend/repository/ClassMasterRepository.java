@@ -19,6 +19,8 @@ public interface ClassMasterRepository extends JpaRepository<ClassMaster, Intege
     List<ClassMaster> findByDepartmentIdAndAdminId(Integer departmentId, Long adminId);
 
     Optional<ClassMaster> findByClassNameAndAdminId(String className, Long adminId);
+ 
+    List<ClassMaster> findAllByClassNameAndAdminId(String className, Long adminId);
 
     Optional<ClassMaster> findByClassNameAndDepartmentIdAndAdminId(String className, Integer departmentId, Long adminId);
 

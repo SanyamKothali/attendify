@@ -243,17 +243,17 @@ public class AttendanceController {
 
     @GetMapping("/teacher/student-list")
     public List<StudentAttendanceDTO> studentTab(
-            @RequestParam(required = false) Integer classId,
+            @RequestParam(required = false) String className,
             @RequestParam(required = false) Integer divisionId,
             @RequestParam(required = false) Integer subjectId) {
         Long adminId = com.example.attendance_Backend.security.AdminContextHolder.getAdminId();
         if (adminId == null)
             return java.util.Collections.emptyList();
-
-        if (classId == null && divisionId == null && subjectId == null) {
+ 
+        if (className == null && divisionId == null && subjectId == null) {
             return attendanceRepository.getStudentTabData(adminId);
         }
-        return attendanceRepository.getFilteredStudentTabData(classId, divisionId, subjectId, adminId);
+        return attendanceRepository.getFilteredStudentTabData(className, divisionId, subjectId, adminId);
     }
 
     @GetMapping("/report")
