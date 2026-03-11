@@ -385,8 +385,8 @@ function generateQRCode(className, division, duration, sessionId) {
     const qrImage = document.getElementById('qrImage');
     const qrTimer = document.getElementById('qrTimer');
 
-    // Base URL for students (hardcoded for current ngrok tunnel per user request)
-    const base = `https://migdalia-counterproductive-leanora.ngrok-free.dev/public/student-attendance.html`;
+    // Base URL for students (dynamic origin for deployment)
+    const base = `${window.location.origin}/public/student-attendance.html`;
 
     const qrParams = new URLSearchParams();
     qrParams.append("class", className);
@@ -934,7 +934,10 @@ async function loadDashboardContent() {
     if (!teacherId) return;
 
     try {
-        const res = await fetch(`/api/teacher/timetable/${teacherId}/today`);
+        const authToken = localStorage.getItem('teacher_authToken') || '';
+        const res = await fetch(`/api/teacher/timetable/${teacherId}/today`, {
+            headers: { 'Authorization': 'Bearer ' + authToken }
+        });
         const lectureSlots = await res.json();
 
         const container = document.querySelector('#dashboard-tab .classes-container');
@@ -1005,7 +1008,10 @@ function loadQRGeneratorContent() {
 function loadClassesContent() {
     const teacherName = document.getElementById('headerName').textContent;
 
-    fetch(`/api/classes/teacher/${teacherName}`)
+    const authToken = localStorage.getItem('teacher_authToken') || '';
+    fetch(`/api/classes/teacher/${teacherName}`, {
+        headers: { 'Authorization': 'Bearer ' + authToken }
+    })
         .then(res => res.json())
         .then(classes => {
             const container = document.getElementById('classesContainer');
@@ -1052,8 +1058,11 @@ async function loadTeacherSubjectsInStudentTab() {
         divisionDropdown.innerHTML = `<option value="">All Divisions</option>`;
         subjectDropdown.innerHTML = `<option value="">All Subjects</option>`;
 
+        const authToken = localStorage.getItem('teacher_authToken') || '';
         // Load all classes first
-        const classesRes = await fetch('/api/master/classes');
+        const classesRes = await fetch('/api/master/classes', {
+            headers: { 'Authorization': 'Bearer ' + authToken }
+        });
         const classes = await classesRes.json();
         classes.forEach(c => {
             classDropdown.innerHTML += `<option value="${c.id}">${c.className}</option>`;
@@ -1068,14 +1077,18 @@ async function loadTeacherSubjectsInStudentTab() {
             if (!classId) return;
 
             // Load divisions for class
-            const divsRes = await fetch(`/api/master/classes/${classId}/divisions`);
+            const divsRes = await fetch(`/api/master/classes/${classId}/divisions`, {
+                headers: { 'Authorization': 'Bearer ' + authToken }
+            });
             const divs = await divsRes.json();
             divs.forEach(d => {
                 divisionDropdown.innerHTML += `<option value="${d.id}">${d.divisionName}</option>`;
             });
 
             // Load subjects for class
-            const subsRes = await fetch(`/api/master/classes/${classId}/subjects`);
+            const subsRes = await fetch(`/api/master/classes/${classId}/subjects`, {
+                headers: { 'Authorization': 'Bearer ' + authToken }
+            });
             const subs = await subsRes.json();
             subs.forEach(s => {
                 subjectDropdown.innerHTML += `<option value="${s.id}">${s.subjectName}</option>`;
@@ -1095,7 +1108,10 @@ async function loadTeacherSubjectsInStudentTab() {
 
 function loadStudentsContent() {
     loadTeacherSubjectsInStudentTab();
-    fetch("/api/attendance/teacher/student-list")
+    const authToken = localStorage.getItem('teacher_authToken') || '';
+    fetch("/api/attendance/teacher/student-list", {
+        headers: { 'Authorization': 'Bearer ' + authToken }
+    })
         .then(res => res.json())
         .then(data => {
 
@@ -1146,7 +1162,10 @@ function loadStudentsForSelectedClass() {
         url += "?" + params.toString();
     }
 
-    fetch(url)
+    const authToken = localStorage.getItem('teacher_authToken') || '';
+    fetch(url, {
+        headers: { 'Authorization': 'Bearer ' + authToken }
+    })
         .then(res => res.json())
         .then(data => {
 
@@ -1192,7 +1211,10 @@ function loadStudentsForSelectedClass() {
 
 // ----------------- VIEW STUDENT -----------------
 function viewStudent(rollNo) {
-    fetch("/api/attendance/teacher/student-list")
+    const authToken = localStorage.getItem('teacher_authToken') || '';
+    fetch("/api/attendance/teacher/student-list", {
+        headers: { 'Authorization': 'Bearer ' + authToken }
+    })
         .then(res => res.json())
         .then(data => {
             const student = data.find(s => s.rollNo == rollNo);
@@ -2394,11 +2416,14 @@ async function loadTeacherStudentList() {
     }
     document.getElementById('studentListStatus').textContent = 'Loading…';
     try {
+        const authToken = localStorage.getItem('teacher_authToken') || '';
         let url = `/api/attendance/reports/students?teacherId=${teacherId}`;
         if (classId) url += `&classId=${classId}`;
         if (divisionId) url += `&divisionId=${divisionId}`;
 
-        const res = await fetch(url);
+        const res = await fetch(url, {
+            headers: { 'Authorization': 'Bearer ' + authToken }
+        });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const students = await res.json();
 
@@ -2424,7 +2449,10 @@ async function loadStudentSubjectSummary() {
     if (!studentId) { alert('Please select a student.'); return; }
 
     try {
-        const res = await fetch(`/api/attendance/reports/student/${studentId}/summary`);
+        const authToken = localStorage.getItem('teacher_authToken') || '';
+        const res = await fetch(`/api/attendance/reports/student/${studentId}/summary`, {
+            headers: { 'Authorization': 'Bearer ' + authToken }
+        });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
 
@@ -2468,7 +2496,10 @@ async function loadStudentDateRecords() {
     if ([...params].length) url += '?' + params.toString();
 
     try {
-        const res = await fetch(url);
+        const authToken = localStorage.getItem('teacher_authToken') || '';
+        const res = await fetch(url, {
+            headers: { 'Authorization': 'Bearer ' + authToken }
+        });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
 
@@ -2519,7 +2550,7 @@ async function loadTimetableGrid() {
 
     try {
         // 1. Load timetable structure (period/break rows defined by admin)
-        const authToken = localStorage.getItem('authToken') || '';
+        const authToken = localStorage.getItem('teacher_authToken') || '';
         const structRes = await fetch('/api/teacher/timetable/structure', {
             headers: { 'Authorization': 'Bearer ' + authToken }
         });
@@ -2559,8 +2590,12 @@ async function loadTimetableGrid() {
         let masterClasses = [];
         try {
             const [deptsRes, classesRes] = await Promise.all([
-                fetch('/api/master/departments'),
-                fetch('/api/master/classes')
+                fetch('/api/master/departments', {
+                    headers: { 'Authorization': 'Bearer ' + authToken }
+                }),
+                fetch('/api/master/classes', {
+                    headers: { 'Authorization': 'Bearer ' + authToken }
+                })
             ]);
             masterDepts = await deptsRes.json();
             masterClasses = await classesRes.json();
@@ -2669,7 +2704,10 @@ async function onTtDepartmentChange(selectEl) {
     subSelect.disabled = true;
 
     try {
-        const masterClassesRes = await fetch('/api/master/classes');
+        const authToken = localStorage.getItem('teacher_authToken') || '';
+        const masterClassesRes = await fetch('/api/master/classes', {
+            headers: { 'Authorization': 'Bearer ' + authToken }
+        });
         const masterClasses = await masterClassesRes.json();
 
         const availableClasses = deptId
@@ -2707,15 +2745,20 @@ async function onTtClassChange(selectEl, isInitialLoad = false) {
     }
 
     try {
+        const authToken = localStorage.getItem('teacher_authToken') || '';
         divSelect.disabled = false;
         subSelect.disabled = false;
 
         // Fetch divisions
-        const divsRes = await fetch(`/api/master/classes/${classId}/divisions`);
+        const divsRes = await fetch(`/api/master/classes/${classId}/divisions`, {
+            headers: { 'Authorization': 'Bearer ' + authToken }
+        });
         const divs = await divsRes.json();
 
         // Fetch subjects
-        const subsRes = await fetch(`/api/master/classes/${classId}/subjects`);
+        const subsRes = await fetch(`/api/master/classes/${classId}/subjects`, {
+            headers: { 'Authorization': 'Bearer ' + authToken }
+        });
         const subs = await subsRes.json();
 
         // Get current values from timetableData
@@ -2791,7 +2834,10 @@ async function loadTodayLectures() {
     select.innerHTML = '<option value="">-- Select Today\'s Lecture --</option>';
 
     try {
-        const res = await fetch(`/api/teacher/timetable/${teacherId}/today`);
+        const authToken = localStorage.getItem('teacher_authToken') || '';
+        const res = await fetch(`/api/teacher/timetable/${teacherId}/today`, {
+            headers: { 'Authorization': 'Bearer ' + authToken }
+        });
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const lectureSlots = await res.json();
 
@@ -2871,7 +2917,10 @@ async function loadConsolidatedReport() {
     statusEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Fetching consolidated data...';
 
     try {
-        const res = await fetch(`/api/attendance/reports/consolidated?classId=${classId}`);
+        const authToken = localStorage.getItem('teacher_authToken') || '';
+        const res = await fetch(`/api/attendance/reports/consolidated?classId=${classId}`, {
+            headers: { 'Authorization': 'Bearer ' + authToken }
+        });
         if (!res.ok) throw new Error("Failed to fetch consolidated report");
 
         const data = await res.json();
@@ -2939,8 +2988,10 @@ async function emailConsolidatedReport(event) {
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
 
     try {
+        const authToken = localStorage.getItem('teacher_authToken') || '';
         const res = await fetch(`/api/attendance/reports/email?classId=${classId}&email=${encodeURIComponent(email)}`, {
-            method: 'POST'
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + authToken }
         });
         if (!res.ok) throw new Error("Failed to send email");
 
@@ -3030,8 +3081,11 @@ async function downloadMonthlyExcel() {
     statusEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating Excel...';
 
     try {
+        const authToken = localStorage.getItem('teacher_authToken') || '';
         const url = `/api/attendance/monthly-report?classId=${classId}&divisionId=${divId}&month=${month}&year=${year}`;
-        const res = await fetch(url);
+        const res = await fetch(url, {
+            headers: { 'Authorization': 'Bearer ' + authToken }
+        });
         if (!res.ok) throw new Error("Failed to fetch monthly report data");
         const data = await res.json();
 
