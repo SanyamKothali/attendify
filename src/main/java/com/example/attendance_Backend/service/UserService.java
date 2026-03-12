@@ -53,6 +53,7 @@ public class UserService {
                     org.springframework.http.HttpStatus.BAD_REQUEST, "Email already registered");
         }
         user.setPassword(passwordService.encode(user.getPassword()));
+        user.setRole("STUDENT"); // Standardize role
         User saved = userRepository.save(user);
         System.out.println("✅ Successfully registered student: " + saved.getEmail());
         return saved;

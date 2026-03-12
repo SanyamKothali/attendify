@@ -47,6 +47,12 @@ public class StudAttendanceService {
 
     public List<AttendanceDTO> getAttendanceList(int userId) {
         Long adminId = AdminContextHolder.getAdminId();
+        if (adminId == null) {
+            Optional<User> userOpt = userRepository.findById(userId);
+            if (userOpt.isPresent() && userOpt.get().getAdmin() != null) {
+                adminId = (long) userOpt.get().getAdmin().getId();
+            }
+        }
         if (adminId == null)
             return java.util.Collections.emptyList();
         return repository.attendanceList(userId, adminId);
@@ -61,6 +67,12 @@ public class StudAttendanceService {
 
     public List<com.example.attendance_Backend.dto.StudentSubjectSummaryDTO> getSubjectWiseSummary(int studentId) {
         Long adminId = AdminContextHolder.getAdminId();
+        if (adminId == null) {
+            Optional<User> userOpt = userRepository.findById(studentId);
+            if (userOpt.isPresent() && userOpt.get().getAdmin() != null) {
+                adminId = (long) userOpt.get().getAdmin().getId();
+            }
+        }
         if (adminId == null)
             return java.util.Collections.emptyList();
         return repository.getStudentSubjectSummary(studentId, adminId);
@@ -68,8 +80,19 @@ public class StudAttendanceService {
 
     public DashboardDTO getDashboardData(int userId) {
         Long adminId = AdminContextHolder.getAdminId();
-        if (adminId == null)
+        
+        // Fallback: If context adminId is null, try to get it from the user record
+        if (adminId == null) {
+            Optional<User> userOpt = userRepository.findById(userId);
+            if (userOpt.isPresent() && userOpt.get().getAdmin() != null) {
+                adminId = (long) userOpt.get().getAdmin().getId();
+            }
+        }
+
+        if (adminId == null) {
+            System.err.println("⚠️ Warning: No admin context for userId: " + userId);
             return new DashboardDTO(0, 0, 0, 0);
+        }
 
         int total = repository.totalClasses(userId, adminId);
         int present = repository.presentCount(userId, adminId);

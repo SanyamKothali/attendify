@@ -132,12 +132,12 @@ public class AuthService {
         if (user.getAddress() != null)
             userPayload.put("address", user.getAddress());
         userPayload.put("email", user.getEmail());
-        userPayload.put("role", "user");
+        userPayload.put("role", "STUDENT");
         if (user.getAdmin() != null) {
             userPayload.put("adminId", user.getAdmin().getId());
         }
 
-        String token = jwtService.generateToken(user.getEmail(), "USER", userPayload);
-        return Optional.of(new AuthResponse(token, "user", userPayload));
+        String token = jwtService.generateToken(user.getEmail(), "STUDENT", userPayload);
+        return Optional.of(new AuthResponse(token, "student", userPayload));
     }
 }
